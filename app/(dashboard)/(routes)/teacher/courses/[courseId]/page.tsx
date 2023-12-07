@@ -5,8 +5,13 @@ import { redirect } from "next/navigation";
 import { IconBadge } from "@/components/icon-badge";
 import { LayoutDashboard } from "lucide-react";
 import TitleForm from "./_components/title_form";
+import { DescriptionForm } from "./_components/description_form";
+import { ImageForm } from "./_components/image_form";
+import { Combobox } from "@/components/ui/combobox";
+import CategoryForm from "./_components/category_form";
 
 const CourseIdPage = async ({ params }: { params: { courseId: string } }) => {
+  const categories = await db.category.findMany({ orderBy: { name: "asc" } });
   const { courseId } = params;
   const { userId } = auth();
   if (!userId) {
@@ -47,6 +52,15 @@ const CourseIdPage = async ({ params }: { params: { courseId: string } }) => {
             <h2 className="text-xl">Customize your course</h2>
           </div>
           <TitleForm initialData={course} />
+          <DescriptionForm initialData={course} courseId={course.id} />
+          <ImageForm initialData={course} courseId={course.id} />
+          <CategoryForm
+            initialData={course}
+            options={categories.map((category) => ({
+              label: category.name,
+              value: category.id,
+            }))}
+          />
         </div>
       </div>
     </div>
