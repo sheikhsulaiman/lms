@@ -1,16 +1,16 @@
 "use client";
 
 import { Chapter } from "@prisma/client";
-import React, { useEffect, useState } from "react";
-
+import { useEffect, useState } from "react";
 import {
   DragDropContext,
   Droppable,
   Draggable,
   DropResult,
 } from "@hello-pangea/dnd";
-import { cn } from "@/lib/utils";
 import { Grip, Pencil } from "lucide-react";
+
+import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
 interface ChapterListProps {
@@ -19,21 +19,46 @@ interface ChapterListProps {
   onEdit: (id: string) => void;
 }
 
-const ChapterList = ({ items, onEdit, onReorder }: ChapterListProps) => {
+export const ChapterList = ({ items, onReorder, onEdit }: ChapterListProps) => {
   const [isMounted, setIsMounted] = useState(false);
   const [chapters, setChapters] = useState(items);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
   useEffect(() => {
     setChapters(items);
   }, [items]);
+
+  const onDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+
+    const items = Array.from(chapters);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    const startIndex = Math.min(result.source.index, result.destination.index);
+    const endIndex = Math.max(result.source.index, result.destination.index);
+
+    const updatedChapters = items.slice(startIndex, endIndex + 1);
+
+    setChapters(items);
+
+    const bulkUpdateData = updatedChapters.map((chapter) => ({
+      id: chapter.id,
+      position: items.findIndex((item) => item.id === chapter.id),
+    }));
+
+    onReorder(bulkUpdateData);
+  };
+
   if (!isMounted) {
     return null;
   }
+
   return (
-    <DragDropContext onDragEnd={() => {}}>
+    <DragDropContext onDragEnd={onDragEnd}>
       <Droppable droppableId="chapters">
         {(provided) => (
           <div {...provided.droppableProps} ref={provided.innerRef}>
@@ -55,31 +80,28 @@ const ChapterList = ({ items, onEdit, onReorder }: ChapterListProps) => {
                   >
                     <div
                       className={cn(
-                        "px-2 py-3 border-r flex bg-yellow-50 border-r-slate-200 hover:bg-slate-200 rounded-l-md transition",
+                        "px-2 py-3 border-r border-r-slate-200 hover:bg-slate-300 rounded-l-md transition",
                         chapter.isPublished &&
                           "border-r-yellow-200 hover:bg-yellow-200"
                       )}
-                      ref={provided.innerRef}
                       {...provided.dragHandleProps}
                     >
-                      <Grip className="h-5 w-5 text-yellow-700" />
+                      <Grip className="h-5 w-5" />
                     </div>
                     {chapter.title}
-                    <div className="flex ml-auto gap-y-2 pr-2 items-center">
-                      {chapter.isFree && (
-                        <Badge className="bg-green-500">Free</Badge>
-                      )}
+                    <div className="ml-auto pr-2 flex items-center gap-x-2">
+                      {chapter.isFree && <Badge>Free</Badge>}
                       <Badge
                         className={cn(
                           "bg-slate-500",
-                          chapter.isPublished && "bg-yellow-400"
+                          chapter.isPublished && "bg-yellow-700"
                         )}
                       >
-                        {chapter.isPublished ? "published" : "Draft"}
+                        {chapter.isPublished ? "Published" : "Draft"}
                       </Badge>
                       <Pencil
-                        className="h-4 w-4 m-2 cursor-pointer hover:opacity-75 transition"
-                        onClick={onEdit.bind(this, chapter.id)}
+                        onClick={() => onEdit(chapter.id)}
+                        className="w-4 h-4 cursor-pointer hover:opacity-75 transition"
                       />
                     </div>
                   </div>
@@ -93,5 +115,3 @@ const ChapterList = ({ items, onEdit, onReorder }: ChapterListProps) => {
     </DragDropContext>
   );
 };
-
-export default ChapterList;
