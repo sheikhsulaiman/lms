@@ -3,7 +3,7 @@
 import * as z from "zod";
 import axios from "axios";
 import { Pencil, PlusCircle, ImageIcon } from "lucide-react";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { Course } from "@prisma/client";
@@ -11,6 +11,7 @@ import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
 import { FileUpload } from "@/components/file_upload";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ImageFormProps {
   initialData: Course;
@@ -68,12 +69,16 @@ export const ImageForm = ({ initialData, courseId }: ImageFormProps) => {
           </div>
         ) : (
           <div className="relative aspect-video mt-2">
-            <Image
-              alt="Upload"
-              fill
-              className="object-cover rounded-md"
-              src={initialData.imageUrl}
-            />
+            <Suspense
+              fallback={<Skeleton className="h-60 bg-black"></Skeleton>}
+            >
+              <Image
+                alt="Upload"
+                fill
+                className="object-cover rounded-md"
+                src={initialData.imageUrl}
+              />
+            </Suspense>
           </div>
         ))}
       {isEditing && (
